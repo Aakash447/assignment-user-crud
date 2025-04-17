@@ -1,78 +1,63 @@
-const { getDB } = require('../db/conn');
-const { ObjectId } = require('mongodb');
+const User = require("../models/user");
 
-const getAllUsers = async (req, reply) => {
+// Get all users
+exports.getAllUsers = async (req, reply) => {
   try {
-    const db = getDB();
-    const users = await db.collection('users').find().toArray();
+    console.log('model User',User)
+    const users = await User.find();
     reply.send(users);
   } catch (err) {
-    reply.status(500).send({ error: err.message });
+    console.error('err:',err)
+    reply.status(500).send(err);
   }
 };
 
-const getUserById = async (req, reply) => {
+// Get a single user
+exports.getUserById = async (req, reply) => {
   try {
-    const db = getDB();
-    const id = new ObjectId(req.params.id);
-    const user = await db.collection('users').findOne({ _id: id });
+    const user = await User.findById(req.params.id);
     if (!user) {
       return reply.status(404).send({ message: 'User not found' });
     }
     reply.send(user);
   } catch (err) {
-    reply.status(500).send({ error: err.message });
+    reply.status(500).send(err);
   }
 };
 
-const createUser = async (req, reply) => {
+// Create a new user
+exports.createUser = async (req, reply) => {
   try {
-    const db = getDB();
-    const { user, interest, age, mobile, email } = req.body;
-    // Validation (Basic - you'll want more robust validation)
-    if (!user || !email) {
-      return reply.status(400).send({ message: 'User and email are required' });
-    }
-    const result = await db.collection('users').insertOne({ user, interest, age, mobile, email });
-    reply.code(201).send({ ...req.body, _id: result.insertedId });
+    const user = new User(req.body);
+    await user.save();
+    reply.code(201).send(user);
   } catch (err) {
-    reply.status(500).send({ error: err.message });
+    reply.status(400).send(err);
   }
 };
 
-const updateUser = async (req, reply) => {
+// Update a user
+exports.updateUser = async (req, reply) => {
   try {
-    const db = getDB();
-    const id = new ObjectId(req.params.id);
-    const { user, interest, age, mobile, email } = req.body;
-    const result = await db.collection('users').updateOne({ _id: id }, { $set: { user, interest, age, mobile, email } });
-    if (result.matchedCount === 0) {
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!user) {
       return reply.status(404).send({ message: 'User not found' });
     }
-    reply.send({ message: 'User updated' });
+    reply.send(user);
   } catch (err) {
-    reply.status(500).send({ error: err.message });
+    reply.status(400).send(err);
   }
 };
 
-const deleteUser = async (req, reply) => {
+// Delete a user
+exports.deleteUser = async (req, reply) => {
   try {
-    const db = getDB();
-    const id = new ObjectId(req.params.id);
-    const result = await db.collection('users').deleteOne({ _id: id });
-    if (result.deletedCount === 0) {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
       return reply.status(404).send({ message: 'User not found' });
     }
     reply.send({ message: 'User deleted' });
   } catch (err) {
-    reply.status(500).send({ error: err.message });
+    reply.status(500).send(err);
   }
-};
-
-module.exports = {
-  getAllUsers,
-  getUserById,
-  createUser,
-  updateUser,
-  deleteUser,
 };

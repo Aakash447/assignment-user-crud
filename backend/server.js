@@ -1,22 +1,21 @@
-const Fastify = require('fastify');
-const app = Fastify({ logger: true });
+const fastify = require('fastify')({ logger: true });
 const userRoutes = require('./routes/user');
 const { connectDB } = require('./db/conn');
 require('dotenv').config();
 
+// Connect to database
 connectDB();
 
-app.register(require('@fastify/cors')); // Enable CORS
-app.register(userRoutes, { prefix: '/users' });
+// Register routes
+fastify.register(userRoutes, { prefix: '/api/users' });
 
+// Start server
 const start = async () => {
   try {
-    await app.listen({ port: process.env.PORT || 3000, host: '0.0.0.0' });
-    app.log.info(`Server listening on ${app.server.address().port}`);
+    await fastify.listen({ port: process.env.PORT || 3008, host: '0.0.0.0' });
   } catch (err) {
-    app.log.error(err);
+    fastify.log.error(err);
     process.exit(1);
   }
 };
-
 start();

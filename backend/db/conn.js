@@ -1,30 +1,16 @@
-const { MongoClient } = require('mongodb');
+const mongoose = require('mongoose');
 require('dotenv').config();
+const dbName = process.env.DB_NAME ;
+const mongoURI = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWORD}@cluster0.x4vf9ku.mongodb.net/${dbName}?retryWrites=true&w=majority&appName=Cluster0`;
 
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
-
-let dbConnection;
-
-async function connectDB() {
+const connectDB = async () => {
   try {
-    await client.connect();
-    dbConnection = client.db(process.env.DB_NAME); // Replace with your DB name
-    console.log('Successfully connected to MongoDB.');
+    const conn = await mongoose.connect(mongoURI);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error('Error connecting to MongoDB:', error);
-    throw error;
+    console.error(`Error: ${error.message}`);
+    process.exit(1);
   }
-}
-
-function getDB() {
-  if (!dbConnection) {
-    throw new Error('Database connection not established.');
-  }
-  return dbConnection;
-}
-
-module.exports = {
-  connectDB,
-  getDB,
 };
+
+module.exports = { connectDB };
