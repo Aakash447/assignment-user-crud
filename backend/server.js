@@ -1,7 +1,9 @@
 const fastify = require('fastify')({ logger: true });
 const userRoutes = require('./routes/user');
 const { connectDB } = require('./db/conn');
+const cors = require('@fastify/cors') 
 require('dotenv').config();
+fastify.register(cors, { origin: '*'})
 
 // Connect to database
 connectDB();

@@ -1,5 +1,4 @@
 'use client';
-
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button, Container, Form, Modal } from 'react-bootstrap';
@@ -8,6 +7,8 @@ import UserTable from '../components/UserTable';
 import UserModal from '../components/UserModal';
 import CustomModel from '../components/CustomModel'
 import { deleteUser, getUsers } from '../utils/api';
+import { API_BASE_URL } from '../services/api';
+import axios from 'axios';
 
 const AddUser  =  ({handleShow}) => {
   return (
@@ -18,6 +19,8 @@ const AddUser  =  ({handleShow}) => {
 }
 
 const AddUserContent =  ({ handleClose }) => {
+   const [loading,setLoading] = useState(false)
+
   const [userForm,setUserForm] = useState({
     name:'',
     email:'',
@@ -33,6 +36,7 @@ const AddUserContent =  ({ handleClose }) => {
     mobile:'',
     interests:''
   })
+  console.log('userFormErrors:',userFormErrors)
 
   console.log('>>>> userForm:',userForm)
 
@@ -92,18 +96,41 @@ const AddUserContent =  ({ handleClose }) => {
         errors.interests = 'Interests is required!'
       }
 
-      if(errors.name || userForm.email || userForm.age || userForm.mobile || userForm.interests ){
+      if(errors.name || errors.email || errors.age || errors.mobile || errors.interests ){
         setUserFormErrors(errors)
         return false
       }
       return true
   }
 
-  const handleSubmit = () => {
-    const isValid = validation()
-    if(!isValid){
-      return 
+  const handleSubmit = async () => {
+
+    try {
+      const isValid = validation()
+      console.log('isValid:',isValid)
+
+      if(!isValid){
+        return 
+      }
+      setLoading(true)
+      const payload = {
+        name: userForm?.name,
+        interests: userForm?.interests,
+        age: userForm?.age,
+        mobile: userForm?.mobile,
+        email: userForm?.email,
+      }
+      console.log("payload",payload)
+      const response = await axios.post(API_BASE_URL,payload);
+      console.log('response:',response)
+      handleClose()
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }finally{
+      setLoading(false)
     }
+
 
   }
   return (
@@ -194,7 +221,9 @@ const AddUserContent =  ({ handleClose }) => {
               Cancel
             </Button>
             <Button variant="secondary" onClick={handleSubmit}>
-              Submit
+              {
+                loading ? 'Loading...' : 'Submit'
+              }
             </Button>
           </Modal.Footer>
           <style jsx>{`
@@ -208,21 +237,31 @@ const AddUserContent =  ({ handleClose }) => {
 
 const HomePage = () => {
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('add');
   const [selectedUser, setSelectedUser] = useState(null);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const data = await getUsers();
-        setUsers(data);
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      }
-    };
+  
 
-    fetchUsers();
+  const getUsers = async () => {
+    try {
+      setLoading(true)
+      const response = await axios.get(API_BASE_URL);
+      setUsers(response.data)
+
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }finally{
+      setLoading(false)
+
+    }
+  };
+
+  useEffect(() => {
+    getUsers();
   }, []);
 
   const handleShowAddModal = () => {
@@ -241,21 +280,17 @@ const HomePage = () => {
     setShowModal(false);
   };
 
-  const refreshUsers = async () => {
-    try {
-      const data = await getUsers();
-      setUsers(data);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    }
-  };
+ 
 
   const handleDeleteUser = async (id) => {
     try {
-      await deleteUser(id);
-      refreshUsers(); // Refresh the user list after deletion
+      const response = await axios.delete(API_BASE_URL+'/' + id);
+      getUsers()
     } catch (error) {
-      console.error('Error deleting user:', error);
+      console.error('Error fetching users:', error);
+      throw error;
+    }finally{
+
     }
   };
 
@@ -271,13 +306,14 @@ const HomePage = () => {
 
   <UserTable
     users={users}
+    loading={loading}
     onEdit={handleShowEditModal}
     onDelete={handleDeleteUser} // Pass delete function
   />
 
   
 
-  <Link href="/new">Go to detail page</Link>
+  
 </Container>
   );
 };

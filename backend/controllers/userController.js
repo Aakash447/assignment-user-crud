@@ -28,6 +28,19 @@ exports.getUserById = async (req, reply) => {
 // Create a new user
 exports.createUser = async (req, reply) => {
   try {
+    // check email
+    const payload = {
+      name: req.body?.name,
+      interests: req.body?.interests,
+      age: req.body?.age,
+      mobile: req.body?.mobile,
+      email: req.body?.email,
+    }
+    const [existedUser] = await User.find({email: payload.email});
+    if(existedUser){
+      return reply.send('Email already exist')
+    }
+    console.log({existedUser})
     const user = new User(req.body);
     await user.save();
     reply.code(201).send(user);

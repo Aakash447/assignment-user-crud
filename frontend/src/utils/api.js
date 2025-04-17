@@ -4,7 +4,7 @@ const API_BASE_URL = 'http://localhost:3000/users'; // Adjust if needed
 
 export const getUsers = async () => {
   try {
-    // const response = await axios.get(API_BASE_URL);
+    const response = await axios.get(API_BASE_URL);
     return []
     // return response.data;
   } catch (error) {
